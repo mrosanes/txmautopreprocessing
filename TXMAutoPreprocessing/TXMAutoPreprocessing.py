@@ -93,19 +93,19 @@ class TXMAutoPreprocessing(Device):
             return self.get_state() not in [DevState.STANDBY]
     
     @DebugIt(show_args=True)
-    def set_Select(self, select):
-        self._select = select
-        if self._target == Action.PIPELINE:
-            if select == Pipeline.MAGNETISM:
+    def set_Target(self, target):
+        self._target = target
+        if self._select == Action.PIPELINE:
+            if target == Pipeline.MAGNETISM:
                 self._command = "magnetism {0} {1}"
 
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
-            elif select == Pipeline.TOMO:
+            elif target == Pipeline.TOMO:
                 self._command = "TODO"
                 self._pipeline = Pipeline.TOMO
-        elif self._target == Action.THETA:
-            args = '--th {0}'.format(self._select)
+        elif self._select == Action.THETA:
+            args = '--th {0}'.format(self._target)
         command = self._command.format(self._txm_file, args)
         self._thread_pool.add(self.run_command, None, command)
  
@@ -130,8 +130,8 @@ class TXMAutoPreprocessing(Device):
         return self._target
 
     @DebugIt(show_args=True)
-    def set_Target(self, target):
-        self._target = target
+    def set_Select(self, select):
+        self._select = select
 
     def is_Target_file_allowed(self, req_type):
         if req_type == AttReqType.READ_REQ:
