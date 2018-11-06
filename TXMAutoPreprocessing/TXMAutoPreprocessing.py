@@ -38,7 +38,7 @@ Pipeline = Enumeration(
 class TXMAutoPreprocessing(Device):
     __metaclass__ = DeviceMeta
 
-    Select = attribute(label="Select", dtype=int,
+    Select = attribute(label="Select", dtype=float,
                        access=AttrWriteType.READ_WRITE,
                        fget="get_Select", fset="set_Select",
                        doc="action select")
