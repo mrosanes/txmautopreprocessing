@@ -38,7 +38,7 @@ Pipeline = Enumeration(
 class TXMAutoPreprocessing(Device):
     __metaclass__ = DeviceMeta
 
-    Select = attribute(label="Select", dtype=float,
+    Select = attribute(label="Select", dtype=int,
                        access=AttrWriteType.READ_WRITE,
                        fget="get_Select", fset="set_Select",
                        doc="action select")
@@ -58,8 +58,8 @@ class TXMAutoPreprocessing(Device):
 
     def init_device(self):
         Device.init_device(self)        
-        self._select = None
-        self._target = None
+        self._select = float("NaN")
+        self._target = float("NaN")
         self._txm_file = None
         self._command = None
         self._pipeline = None
@@ -86,7 +86,7 @@ class TXMAutoPreprocessing(Device):
     def get_Select(self):
         return self._select
 
-    def is_Select_file_allowed(self, req_type):
+    def is_Select_allowed(self, req_type):
         if req_type == AttReqType.READ_REQ:
             return True
         else:
@@ -133,7 +133,7 @@ class TXMAutoPreprocessing(Device):
     def set_Select(self, select):
         self._select = select
 
-    def is_Target_file_allowed(self, req_type):
+    def is_Target_allowed(self, req_type):
         if req_type == AttReqType.READ_REQ:
             return True
         else:
