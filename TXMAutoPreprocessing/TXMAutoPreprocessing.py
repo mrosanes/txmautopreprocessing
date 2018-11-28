@@ -72,6 +72,7 @@ class TXMAutoPreprocessing(Device):
 
     @DebugIt(show_args=True)
     def set_TXM_file(self, txmfile):
+        self.debug_stream("Set TXM_file: %s" % (txmfile))
         self._txm_file = txmfile
 
     def get_TXM_file(self):
@@ -82,6 +83,11 @@ class TXMAutoPreprocessing(Device):
             return True
         else:
             return self.get_state() in [DevState.STANDBY]
+
+    @DebugIt(show_args=True)
+    def set_Select(self, select):
+        self.debug_stream("Set select: %s" % (select))
+        self._select = select
 
     def get_Select(self):
         return self._select
@@ -95,10 +101,10 @@ class TXMAutoPreprocessing(Device):
     @DebugIt(show_args=True)
     def set_Target(self, target):
         self._target = target
+        self.debug_stream("Set target: %s" % (target))
         if self._select == Action.PIPELINE:
             if target == Pipeline.MAGNETISM:
                 self._command = "magnetism {0} {1}"
-
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
             elif target == Pipeline.TOMO:
@@ -107,8 +113,20 @@ class TXMAutoPreprocessing(Device):
         elif self._select == Action.THETA:
             args = '--th {0}'.format(self._target)
         command = self._command.format(self._txm_file, args)
+        self.debug_stream("command %s" % (command))
         self._thread_pool.add(self.run_command, None, command)
- 
+
+    def get_Target(self):
+        return self._target
+
+    def is_Target_allowed(self, req_type):
+        if req_type == AttReqType.READ_REQ:
+            return True
+        else:
+            return self.get_state() not in [DevState.STANDBY]
+
+
+    @DebugIt(show_args=True)
     def run_command(self, command, state=DevState.ON):
         self.set_state(DevState.RUNNING)
         ssh = subprocess.Popen(["ssh", '-t', self.user_host, command],
@@ -118,32 +136,19 @@ class TXMAutoPreprocessing(Device):
         result = ssh.stdout.readlines()
         if result == []:
             errors = ssh.stderr.readlines()
-            print "\n\n", len(errors)
-            pprint.pprint(errors, sys.stderr)
+            self.debug_stream("run_command error %s" % (errors))
             self.set_state(DevState.FAULT)
         else:
             for line in result:
-                print line
+                self.debug_stream(line)
             self.set_state(state)
     
-    def get_Target(self):
-        return self._target
-
-    @DebugIt(show_args=True)
-    def set_Select(self, select):
-        self._select = select
-
-    def is_Target_allowed(self, req_type):
-        if req_type == AttReqType.READ_REQ:
-            return True
-        else:
-            return self.get_state() not in [DevState.STANDBY]
-
     def delete_device(self):
         self._thread_pool.join()
         self._thread_pool = None
 
     @command()
+    @DebugIt()
     def start(self):
         self.set_state(DevState.ON)
 
@@ -151,10 +156,12 @@ class TXMAutoPreprocessing(Device):
         return self.get_state() in [DevState.STANDBY]
 
     @command()
+    @DebugIt()
     def end(self):
         if self._pipeline ==  Pipeline.MAGNETISM:
             args = '--stack'
-        command = self._command.format(self._txm_file, args)    
+        command = self._command.format(self._txm_file, args)
+        self.debug_stream("run_command %s" % (command))
         self._thread_pool.add(self.run_command, None, command,
                               DevState.STANDBY)
 
