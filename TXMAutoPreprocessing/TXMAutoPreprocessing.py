@@ -56,6 +56,7 @@ class TXMAutoPreprocessing(Device):
     HOST = "pcbl0903"
     USER = "opbl09"
 
+
     def init_device(self):
         Device.init_device(self)        
         self._select = float("NaN")
@@ -128,6 +129,7 @@ class TXMAutoPreprocessing(Device):
 
     @DebugIt(show_args=True)
     def run_command(self, command, state=DevState.ON):
+        self.debug_stream("run_command %s" % (command))
         self.set_state(DevState.RUNNING)
         ssh = subprocess.Popen(["ssh", '-t', self.user_host, command],
                                shell=False,
@@ -139,8 +141,7 @@ class TXMAutoPreprocessing(Device):
             self.debug_stream("run_command error %s" % (errors))
             self.set_state(DevState.FAULT)
         else:
-            for line in result:
-                self.debug_stream(line)
+            self.debug_stream("".join(result))
             self.set_state(state)
     
     def delete_device(self):
