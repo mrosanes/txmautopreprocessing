@@ -141,7 +141,11 @@ class TXMAutoPreprocessing(Device):
             self.debug_stream("run_command error %s" % (errors))
             self.set_state(DevState.FAULT)
         else:
-            self.debug_stream("".join(result))
+            ssh.communicate()[0]
+            if ssh.returncode != 0:
+                self.error_stream("".join(result))
+            else:
+                self.debug_stream("".join(result))
             self.set_state(state)
     
     def delete_device(self):
