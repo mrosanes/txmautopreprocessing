@@ -135,17 +135,12 @@ class TXMAutoPreprocessing(Device):
                                shell=False,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
-        result = ssh.stdout.readlines()
-        if result == []:
-            errors = ssh.stderr.readlines()
-            self.debug_stream("run_command error %s" % (errors))
+        result, errors = ssh.communicate()
+        if errors is not None:
+            self.error_stream(result.replace('%', '@'))
             self.set_state(DevState.FAULT)
         else:
-            ssh.communicate()[0]
-            if ssh.returncode != 0:
-                self.error_stream("".join(result))
-            else:
-                self.debug_stream("".join(result))
+            self.debug_stream("".join(result))
             self.set_state(state)
     
     def delete_device(self):
@@ -163,7 +158,7 @@ class TXMAutoPreprocessing(Device):
     @command()
     @DebugIt()
     def end(self):
-        if self._pipeline ==  Pipeline.MAGNETISM:
+        if self._pipeline == Pipeline.MAGNETISM:
             args = '--stack'
         command = self._command.format(self._txm_file, args)
         self.debug_stream("run_command %s" % (command))
