@@ -137,7 +137,7 @@ class TXMAutoPreprocessing(Device):
                                stderr=subprocess.PIPE)
         result, errors = ssh.communicate()
         if errors is not None:
-            self.error_stream(result.replace('%', '@'))
+            self.error_stream(result.replace('%', '%%'))
             self.set_state(DevState.FAULT)
         else:
             self.debug_stream("".join(result))
