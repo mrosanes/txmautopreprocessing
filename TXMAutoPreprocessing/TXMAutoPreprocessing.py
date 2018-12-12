@@ -135,13 +135,9 @@ class TXMAutoPreprocessing(Device):
                                shell=False,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
-        result, errors = ssh.communicate()
-        if errors is not None:
-            self.error_stream(result.replace('%', '%%'))
-            self.set_state(DevState.FAULT)
-        else:
-            self.debug_stream("".join(result))
-            self.set_state(state)
+        out, err = ssh.communicate()
+        if out is not None or len(out) != 0:
+            self.debug_stream(out.replace('%', '%%'))
     
     def delete_device(self):
         self._thread_pool.join()
