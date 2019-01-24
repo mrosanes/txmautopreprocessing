@@ -25,6 +25,7 @@ Action = Enumeration(
     'Action', (
         'PIPELINE',
         'THETA',
+        'ID',
         'ENERGY'
     ))
 
@@ -109,10 +110,15 @@ class TXMAutoPreprocessing(Device):
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
             elif target == Pipeline.TOMO:
-                self._command = "TODO"
+                # eg: ctbiopartial test.txt --db
+                # eg: ctbiopartial test.txt --id=2
+                self._command = "ctbiopartial {0}"
                 self._pipeline = Pipeline.TOMO
+                args = '--db'
         elif self._select == Action.THETA:
             args = '--th {0}'.format(self._target)
+        elif self._select == Action.ID:
+            args = '--id {0}'.format(self._target)
         command = self._command.format(self._txm_file, args)
         self.debug_stream("command %s" % (command))
         self._thread_pool.add(self.run_command, None, command)
@@ -156,10 +162,12 @@ class TXMAutoPreprocessing(Device):
     def end(self):
         if self._pipeline == Pipeline.MAGNETISM:
             args = '--stack'
-        command = self._command.format(self._txm_file, args)
-        self.debug_stream("run_command %s" % (command))
-        self._thread_pool.add(self.run_command, None, command,
-                              DevState.STANDBY)
+            command = self._command.format(self._txm_file, args)
+            self.debug_stream("run_command %s" % (command))
+            self._thread_pool.add(self.run_command, None, command,
+                                  DevState.STANDBY)
+        elif self._pipeline == Pipeline.TOMO:
+            self.set_state(DevState.STANDBY)
 
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
