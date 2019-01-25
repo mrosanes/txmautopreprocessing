@@ -3,28 +3,19 @@ import subprocess
 import pprint
 
 from taurus.core.util.threadpool import ThreadPool
-# from enum import IntEnum
 from taurus.core.util.enumeration import Enumeration
 
 from PyTango import AttrWriteType, DevState, DebugIt, AttReqType
 from PyTango.server import Device, DeviceMeta, attribute, run, command
 
-# class Action(IntEnum):
-#     PIPELINE = 0
-#     THETA = 1
-#     ENERGY = 2
-#
-# class Pipeline(IntEnum):
-#     MAGNETISM = 0
-#     TOMO = 1
-#     SPECTRO = 2
 
 Action = Enumeration(
     'Action', (
         'PIPELINE',
         'THETA',
         'ID',
-        'ENERGY'
+        'ENERGY',
+        'END'
     ))
 
 Pipeline = Enumeration(
@@ -69,6 +60,7 @@ class TXMAutoPreprocessing(Device):
                                        parent=None,
                                        Psize=1,
                                        Qsize=0)
+        self._count_command = 1
 
     @DebugIt(show_args=True)
     def set_TXM_file(self, txmfile):
@@ -110,7 +102,7 @@ class TXMAutoPreprocessing(Device):
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
             elif target == Pipeline.TOMO:
-                print("hiho tomo")
+                print("Beginning of Tomo pipeline")
                 # eg: ctbiopartial test.txt --db
                 # eg: ctbiopartial test.txt --id=1
                 # (id of first xrm record for each sample)
@@ -121,11 +113,15 @@ class TXMAutoPreprocessing(Device):
             args = '--th {0}'.format(self._target)
         elif self._select == Action.ID and self._pipeline == Pipeline.TOMO:
             args = '--id {0}'.format(self._target)
-        print(args)
-        command = self._command.format(self._txm_file, args)
-        self.debug_stream("command %s" % (command))
-        print(command)
-        self._thread_pool.add(self.run_command, None, command)
+        if self._select != Action.END:
+            print(self._txm_file)
+            print(args)
+            command = self._command.format(self._txm_file, args)
+            self.debug_stream("command %s" % (command))
+            print(command)
+            self._thread_pool.add(self.run_command, None, command)
+        else:
+            self._thread_pool.add(self.end, None)
 
     def get_Target(self):
         return self._target
@@ -138,6 +134,8 @@ class TXMAutoPreprocessing(Device):
 
     @DebugIt(show_args=True)
     def run_command(self, command, state=DevState.ON):
+        #print("begin execute command")
+        #print(self._count_command)
         self.debug_stream("run_command %s" % (command))
         self.set_state(DevState.RUNNING)
         ssh = subprocess.Popen(["ssh", '-t', self.user_host, command],
@@ -147,8 +145,11 @@ class TXMAutoPreprocessing(Device):
         out, err = ssh.communicate()
         if out is not None or len(out) != 0:
             self.debug_stream(out.replace('%', '%%'))
-        print("state ON")
+        #print("state ON")
         self.set_state(state)
+        #print(self._count_command)
+        #print("end execute command")
+        self._count_command += 1
 
     def delete_device(self):
         self._thread_pool.join()
@@ -173,6 +174,7 @@ class TXMAutoPreprocessing(Device):
                                   DevState.STANDBY)
         elif self._pipeline == Pipeline.TOMO:
             self.set_state(DevState.STANDBY)
+            print("End of tomo pipeline: setting DS state to standby")
 
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
