@@ -6,10 +6,8 @@ from taurus.core.util.threadpool import ThreadPool
 # from enum import IntEnum
 from taurus.core.util.enumeration import Enumeration
 
-
 from PyTango import AttrWriteType, DevState, DebugIt, AttReqType
 from PyTango.server import Device, DeviceMeta, attribute, run, command
-
 
 # class Action(IntEnum):
 #     PIPELINE = 0
@@ -32,9 +30,10 @@ Action = Enumeration(
 Pipeline = Enumeration(
     'Pipeline', (
         'MAGNETISM',
-        'TOMO'
+        'TOMO',
         'SPECTRO'
     ))
+
 
 class TXMAutoPreprocessing(Device):
     __metaclass__ = DeviceMeta
@@ -53,13 +52,12 @@ class TXMAutoPreprocessing(Device):
                          access=AttrWriteType.READ_WRITE,
                          fget="get_TXM_file", fset="set_TXM_file",
                          doc="txm file")
-    
+
     HOST = "pcbl0903"
     USER = "opbl09"
 
-
     def init_device(self):
-        Device.init_device(self)        
+        Device.init_device(self)
         self._select = float("NaN")
         self._target = float("NaN")
         self._txm_file = None
@@ -79,7 +77,7 @@ class TXMAutoPreprocessing(Device):
 
     def get_TXM_file(self):
         return self._txm_file
-    
+
     def is_TXM_file_allowed(self, req_type):
         if req_type == AttReqType.READ_REQ:
             return True
@@ -99,28 +97,34 @@ class TXMAutoPreprocessing(Device):
             return True
         else:
             return self.get_state() not in [DevState.STANDBY]
-    
+
     @DebugIt(show_args=True)
     def set_Target(self, target):
+        print("setting target")
         self._target = target
         self.debug_stream("Set target: %s" % (target))
         if self._select == Action.PIPELINE:
             if target == Pipeline.MAGNETISM:
+                print("hiho magnetism")
                 self._command = "magnetism {0} {1}"
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
             elif target == Pipeline.TOMO:
+                print("hiho tomo")
                 # eg: ctbiopartial test.txt --db
-                # eg: ctbiopartial test.txt --id=2
-                self._command = "ctbiopartial {0}"
+                # eg: ctbiopartial test.txt --id=1
+                # (id of first xrm record for each sample)
+                self._command = "ctbiopartial {0} {1}"
                 self._pipeline = Pipeline.TOMO
                 args = '--db'
         elif self._select == Action.THETA:
             args = '--th {0}'.format(self._target)
-        elif self._select == Action.ID:
+        elif self._select == Action.ID and self._pipeline == Pipeline.TOMO:
             args = '--id {0}'.format(self._target)
+        print(args)
         command = self._command.format(self._txm_file, args)
         self.debug_stream("command %s" % (command))
+        print(command)
         self._thread_pool.add(self.run_command, None, command)
 
     def get_Target(self):
@@ -131,7 +135,6 @@ class TXMAutoPreprocessing(Device):
             return True
         else:
             return self.get_state() not in [DevState.STANDBY]
-
 
     @DebugIt(show_args=True)
     def run_command(self, command, state=DevState.ON):
@@ -144,7 +147,9 @@ class TXMAutoPreprocessing(Device):
         out, err = ssh.communicate()
         if out is not None or len(out) != 0:
             self.debug_stream(out.replace('%', '%%'))
-    
+        print("state ON")
+        self.set_state(state)
+
     def delete_device(self):
         self._thread_pool.join()
         self._thread_pool = None
@@ -171,7 +176,7 @@ class TXMAutoPreprocessing(Device):
 
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
-    
+
     @command()
     def stop(self):
         self.init_device()
@@ -183,3 +188,4 @@ def runDS():
 
 if __name__ == "__main__":
     runDS()
+
