@@ -173,7 +173,7 @@ class TXMAutoPreprocessing(Device):
             self._thread_pool.add(self.run_command, None, command,
                                   DevState.STANDBY)
         elif self._pipeline == Pipeline.TOMO:
-            self.set_state(DevState.STANDBY)
+            self._thread_pool.add(self.set_state, None, DevState.STANDBY)
             print("End of tomo pipeline: setting DS state to standby")
 
     def is_end_allowed(self):
