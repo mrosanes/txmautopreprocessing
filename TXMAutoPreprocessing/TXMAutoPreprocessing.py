@@ -44,7 +44,7 @@ class TXMAutoPreprocessing(Device):
                          fget="get_TXM_file", fset="set_TXM_file",
                          doc="txm file")
 
-    HOST = "pcbl0903"
+    HOST = "hpcinteractive01"
     USER = "opbl09"
 
     def init_device(self):
