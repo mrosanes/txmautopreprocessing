@@ -1,3 +1,4 @@
+import os
 import sys
 import subprocess
 import pprint
@@ -15,7 +16,8 @@ Action = Enumeration(
         'THETA',
         'ID',
         'ENERGY',
-        'END'
+        'END',
+        'FOLDER'
     ))
 
 Pipeline = Enumeration(
@@ -44,6 +46,11 @@ class TXMAutoPreprocessing(Device):
                          fget="get_TXM_file", fset="set_TXM_file",
                          doc="txm file")
 
+    RootFolder = attribute(label="RootFolder", dtype=str,
+                           access=AttrWriteType.READ_WRITE,
+                           fget="get_RootFolder", fset="set_RootFolder",
+                           doc="the root folder to store the collected data")
+
     HOST = "hpcinteractive01"
     USER = "opbl09"
 
@@ -61,6 +68,31 @@ class TXMAutoPreprocessing(Device):
                                        Psize=1,
                                        Qsize=0)
         self._count_command = 1
+
+        ### Folder collect ###
+        self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
+        self._folder_num = 0
+        self._user_folder = (self._root_folder + "/data_" 
+                             + str(self._folder_num))
+        #os.system("mkdir -p %s" % self._root_folder)
+        os.system("mkdir -p %s" % self._user_folder)
+
+        # This is the link name (not a folder): 
+        # It is the place that has to be indicated in the XMController SW
+        # to store the data:
+        self._all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
+
+        # The data will be distributed in different folders thanks to setting
+        # the folder number. All data stored in the symbolic link, 
+        # will be stored in the user folder.
+        # Relative path shall be used in the symbolic link in order to be read
+        # from Windows OS (even if created in Linux OS).
+        self.user_folder_relative_path = self._user_folder.replace(
+                                                     "/beamlines/bl09", "..")
+        os.system("ln -s %s %s" % (self.user_folder_relative_path, 
+                                   self._all_files_link))
+        ########################
+
 
     @DebugIt(show_args=True)
     def set_TXM_file(self, txmfile):
@@ -113,15 +145,33 @@ class TXMAutoPreprocessing(Device):
             args = '--th {0}'.format(self._target)
         elif self._select == Action.ID and self._pipeline == Pipeline.TOMO:
             args = '--id {0}'.format(self._target)
-        if self._select != Action.END:
+
+        ## Folder collect ##
+        if self._select == Action.FOLDER:
+            self._folder_num = self._target
+            self._user_folder = (self._root_folder + "/data_" + 
+                                 str(int(self._folder_num)))
+            os.system("rm %s" % self._all_files_link)
+            os.system("mkdir -p %s" % self._user_folder)
+
+            self.user_folder_relative_path = self._user_folder.replace(
+                                                  "/beamlines/bl09", "..")
+            os.system("ln -s %s %s" % (self.user_folder_relative_path, 
+                                       self._all_files_link))
+            print("Folder set to %s" % self._user_folder)
+        #####################
+
+        #### END action #####
+        if self._select != Action.END and self._select != Action.FOLDER:
             print(self._txm_file)
             print(args)
             command = self._command.format(self._txm_file, args)
             self.debug_stream("command %s" % (command))
             print(command)
             self._thread_pool.add(self.run_command, None, command)
-        else:
+        if self._select == Action.END:
             self._thread_pool.add(self.end, None)
+        #####################
 
     def get_Target(self):
         return self._target
@@ -182,6 +232,16 @@ class TXMAutoPreprocessing(Device):
     @command()
     def stop(self):
         self.init_device()
+
+    def get_RootFolder(self):
+        return self._root_folder
+        
+    def set_RootFolder(self, root_folder):
+        self._root_folder = root_folder
+        print("Root Folder set to %s" % self._root_folder)
+
+    def delete_device(self):
+        os.system("rm %s" % self._all_files_link)
 
 
 def runDS():
