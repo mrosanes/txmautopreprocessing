@@ -170,7 +170,7 @@ class TXMAutoPreprocessing(Device):
             print(command)
             self._thread_pool.add(self.run_command, None, command)
         if self._select == Action.END:
-            self._thread_pool.add(self.end, None)
+            self.end()
         #####################
 
     def get_Target(self):
@@ -187,7 +187,6 @@ class TXMAutoPreprocessing(Device):
         #print("begin execute command")
         #print(self._count_command)
         self.debug_stream("run_command %s" % (command))
-        self.set_state(DevState.RUNNING)
         ssh = subprocess.Popen(["ssh", '-t', self.user_host, command],
                                shell=False,
                                stdout=subprocess.PIPE,
@@ -223,7 +222,7 @@ class TXMAutoPreprocessing(Device):
             self._thread_pool.add(self.run_command, None, command,
                                   DevState.STANDBY)
         elif self._pipeline == Pipeline.TOMO:
-            self._thread_pool.add(self.set_state, None, DevState.STANDBY)
+            self.set_state(DevState.STANDBY)
             print("End of tomo pipeline: setting DS state to standby")
 
     def is_end_allowed(self):
