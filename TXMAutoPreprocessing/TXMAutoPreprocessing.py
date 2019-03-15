@@ -46,10 +46,6 @@ class TXMAutoPreprocessing(Device):
                          fget="get_TXM_file", fset="set_TXM_file",
                          doc="txm file")
 
-    RootFolder = attribute(label="RootFolder", dtype=str,
-                           access=AttrWriteType.READ_WRITE,
-                           fget="get_RootFolder", fset="set_RootFolder",
-                           doc="the root folder to store the collected data")
 
     HOST = "hpcinteractive01"
     USER = "opbl09"
@@ -70,17 +66,16 @@ class TXMAutoPreprocessing(Device):
         self._count_command = 1
 
         ### Folder collect ###
-        self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
-        self._folder_num = 0
-        self._user_folder = (self._root_folder + "/data_" 
-                             + str(self._folder_num))
-        #os.system("mkdir -p %s" % self._root_folder)
+        self._root_folder = "/tmp/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
+        #self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
+        self._user_folder = self._root_folder
         os.system("mkdir -p %s" % self._user_folder)
 
         # This is the link name (not a folder): 
         # It is the place that has to be indicated in the XMController SW
         # to store the data:
-        self._all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
+        self._all_files_link = "/tmp/beamlines/bl09/controls/BL09_RAWDATA"
+        #self._all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
 
         # The data will be distributed in different folders thanks to setting
         # the folder number. All data stored in the symbolic link, 
@@ -88,7 +83,9 @@ class TXMAutoPreprocessing(Device):
         # Relative path shall be used in the symbolic link in order to be read
         # from Windows OS (even if created in Linux OS).
         self.user_folder_relative_path = self._user_folder.replace(
-                                                     "/beamlines/bl09", "..")
+                                                "/tmp/beamlines/bl09", "..")
+        #self.user_folder_relative_path = self._user_folder.replace(
+        #                                             "/beamlines/bl09", "..")
         os.system("ln -s %s %s" % (self.user_folder_relative_path, 
                                    self._all_files_link))
         ########################
@@ -97,6 +94,7 @@ class TXMAutoPreprocessing(Device):
     @DebugIt(show_args=True)
     def set_TXM_file(self, txmfile):
         self.debug_stream("Set TXM_file: %s" % (txmfile))
+        self._root_folder = os.path.dirname(txmfile)
         self._txm_file = txmfile
 
     def get_TXM_file(self):
@@ -155,7 +153,9 @@ class TXMAutoPreprocessing(Device):
             os.system("mkdir -p %s" % self._user_folder)
 
             self.user_folder_relative_path = self._user_folder.replace(
-                                                  "/beamlines/bl09", "..")
+                                                  "/tmp/beamlines/bl09", "..")
+            #self.user_folder_relative_path = self._user_folder.replace(
+            #                                      "/beamlines/bl09", "..")
             os.system("ln -s %s %s" % (self.user_folder_relative_path, 
                                        self._all_files_link))
             print("Folder set to %s" % self._user_folder)
@@ -203,7 +203,8 @@ class TXMAutoPreprocessing(Device):
     def delete_device(self):
         self._thread_pool.join()
         self._thread_pool = None
-
+        os.system("rm %s" % self._all_files_link)
+        
     @command()
     @DebugIt()
     def start(self):
@@ -231,16 +232,6 @@ class TXMAutoPreprocessing(Device):
     @command()
     def stop(self):
         self.init_device()
-
-    def get_RootFolder(self):
-        return self._root_folder
-        
-    def set_RootFolder(self, root_folder):
-        self._root_folder = root_folder
-        print("Root Folder set to %s" % self._root_folder)
-
-    def delete_device(self):
-        os.system("rm %s" % self._all_files_link)
 
 
 def runDS():
