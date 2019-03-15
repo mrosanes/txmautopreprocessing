@@ -63,31 +63,37 @@ class TXMAutoPreprocessing(Device):
                                        parent=None,
                                        Psize=1,
                                        Qsize=0)
-        self._count_command = 1
+        #self._count_command = 1
 
         ### Folder collect ###
-        self._root_folder = "/tmp/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
-        #self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
-        self._user_folder = self._root_folder
-        os.system("mkdir -p %s" % self._user_folder)
+        try:
+            #self._root_folder = (
+            #    "/tmp/beamlines/bl09/controls/DEFAULT_USER_FOLDER")
+            self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
+            self._user_folder = self._root_folder
+            os.system("mkdir -p %s" % self._user_folder)
 
-        # This is the link name (not a folder): 
-        # It is the place that has to be indicated in the XMController SW
-        # to store the data:
-        self._all_files_link = "/tmp/beamlines/bl09/controls/BL09_RAWDATA"
-        #self._all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
+            # This is the link name (not a folder): 
+            # It is the place that has to be indicated in the XMController SW
+            # to store the data:
+            #self._all_files_link = "/tmp/beamlines/bl09/controls/BL09_RAWDATA"
+            self._all_files_link = "/beamlines/bl09/controls/BL09_RAWDATA"
 
-        # The data will be distributed in different folders thanks to setting
-        # the folder number. All data stored in the symbolic link, 
-        # will be stored in the user folder.
-        # Relative path shall be used in the symbolic link in order to be read
-        # from Windows OS (even if created in Linux OS).
-        self.user_folder_relative_path = self._user_folder.replace(
-                                                "/tmp/beamlines/bl09", "..")
-        #self.user_folder_relative_path = self._user_folder.replace(
-        #                                             "/beamlines/bl09", "..")
-        os.system("ln -s %s %s" % (self.user_folder_relative_path, 
-                                   self._all_files_link))
+            # The data will be distributed in different folders thanks to 
+            # setting the folder number. All data stored in the symbolic link, 
+            # will be stored in the user folder.
+            # Relative path shall be used in the symbolic link in order to be 
+            # read from Windows OS (even if created in Linux OS).
+            #self.user_folder_relative_path = self._user_folder.replace(
+            #    "/tmp/beamlines/bl09", "..")
+            self.user_folder_relative_path = self._user_folder.replace(
+             "/beamlines/bl09", "..")
+            os.system("ln -s %s %s" % (self.user_folder_relative_path, 
+                                       self._all_files_link))
+        except Exception:
+            self._root_folder = "."
+            self._user_folder = self._root_folder
+            self.user_folder_relative_path = self._root_folder
         ########################
 
 
@@ -149,13 +155,16 @@ class TXMAutoPreprocessing(Device):
             self._folder_num = self._target
             self._user_folder = (self._root_folder + "/data_" + 
                                  str(int(self._folder_num)))
-            os.system("rm %s" % self._all_files_link)
+            try:
+                os.system("rm %s" % self._all_files_link)
+            except Exception:
+                pass
             os.system("mkdir -p %s" % self._user_folder)
 
-            self.user_folder_relative_path = self._user_folder.replace(
-                                                  "/tmp/beamlines/bl09", "..")
             #self.user_folder_relative_path = self._user_folder.replace(
-            #                                      "/beamlines/bl09", "..")
+            #                                      "/tmp/beamlines/bl09", "..")
+            self.user_folder_relative_path = self._user_folder.replace(
+                "/beamlines/bl09", "..")
             os.system("ln -s %s %s" % (self.user_folder_relative_path, 
                                        self._all_files_link))
             print("Folder set to %s" % self._user_folder)
@@ -198,7 +207,7 @@ class TXMAutoPreprocessing(Device):
         self.set_state(state)
         #print(self._count_command)
         #print("end execute command")
-        self._count_command += 1
+        #self._count_command += 1
 
     def delete_device(self):
         self._thread_pool.join()
