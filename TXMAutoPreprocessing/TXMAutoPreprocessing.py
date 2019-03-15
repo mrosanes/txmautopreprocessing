@@ -225,7 +225,11 @@ class TXMAutoPreprocessing(Device):
         elif self._pipeline == Pipeline.TOMO:
             self.set_state(DevState.STANDBY)
             print("End of tomo pipeline: setting DS state to standby")
-
+        else:
+            # For Folder select and others
+            self.set_state(DevState.STANDBY)
+            print("End of tomo pipeline: setting DS state to standby")
+            
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
 
