@@ -86,6 +86,8 @@ class TXMAutoPreprocessing(Device):
             # read from Windows OS (even if created in Linux OS).
             #self.user_folder_relative_path = self._user_folder.replace(
             #    "/tmp/beamlines/bl09", "..")
+            self.root_folder_relative_path = self._root_folder.replace(
+             "/beamlines/bl09", "..")
             self.user_folder_relative_path = self._user_folder.replace(
              "/beamlines/bl09", "..")
             os.system("ln -s %s %s" % (self.user_folder_relative_path, 
@@ -236,8 +238,13 @@ class TXMAutoPreprocessing(Device):
             print("End of tomo pipeline: setting DS state to standby")
         else:
             # For Folder select and others
+            # Setting default link, otherwise from Windows, if link is
+            # broken, the link cannot be seen.
+            os.system("rm %s" % self._all_files_link)
+            os.system("ln -s %s %s" % (self.root_folder_relative_path,
+                                       self._all_files_link))
             self.set_state(DevState.STANDBY)
-            print("End of tomo pipeline: setting DS state to standby")
+            print("End: setting DS state to standby")
             
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
