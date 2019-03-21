@@ -1,0 +1,3 @@
+#!/usr/bin/sh
+
+screen -dm -S TXMAutoPreprocessing-$1 python /homelocal/sicilia/lib/python/site-packages/TXMAutoPreprocessing/TXMAutoPreprocessing.py $*
