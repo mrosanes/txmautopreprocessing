@@ -54,7 +54,7 @@ class TXMAutoPreprocessing(Device):
         Device.init_device(self)
         self._select = float("NaN")
         self._target = float("NaN")
-        self._txm_file = None
+        self._txm_file = "<Unspecified>"
         self._command = None
         self._pipeline = None
         self.set_state(DevState.STANDBY)
