@@ -17,7 +17,8 @@ Action = Enumeration(
         'ID',
         'ENERGY',
         'END',
-        'FOLDER'
+        'FOLDER',
+        'SYNCHRONIZE'
     ))
 
 Pipeline = Enumeration(
@@ -133,6 +134,11 @@ class TXMAutoPreprocessing(Device):
         print("setting target")
         self._target = target
         self.debug_stream("Set target: %s" % (target))
+        if self._select == Action.SYNCHRONIZE:
+            # SYNCHRONIZE is used to solve discrepancies between TXM motors
+            # interface position values (select/target) and its corresponding
+            # Tango Attributes.
+            pass
         if self._select == Action.PIPELINE:
             if target == Pipeline.MAGNETISM:
                 print("hiho magnetism")
