@@ -47,7 +47,6 @@ class TXMAutoPreprocessing(Device):
                          fget="get_TXM_file", fset="set_TXM_file",
                          doc="txm file")
 
-
     HOST = "hpcinteractive01"
     USER = "opbl09"
 
@@ -64,9 +63,9 @@ class TXMAutoPreprocessing(Device):
                                        parent=None,
                                        Psize=1,
                                        Qsize=0)
-        #self._count_command = 1
+        # self._count_command = 1
 
-        ### Folder collect ###
+        # Folder collect #
         try:
             #self._root_folder = (
             #    "/tmp/beamlines/bl09/controls/DEFAULT_USER_FOLDER")
@@ -97,12 +96,12 @@ class TXMAutoPreprocessing(Device):
             self._root_folder = "."
             self._user_folder = self._root_folder
             self.user_folder_relative_path = self._root_folder
-        ########################
-
 
     @DebugIt(show_args=True)
     def set_TXM_file(self, txmfile):
-        self.debug_stream("Set TXM_file: %s" % (txmfile))
+        if "/storagebls" in txmfile:
+            txmfile = txmfile.replace("/storagebls", "")
+        self.debug_stream("Set TXM_file: %s" % txmfile)
         self._root_folder = os.path.dirname(txmfile)
         self._txm_file = txmfile
 
@@ -131,9 +130,9 @@ class TXMAutoPreprocessing(Device):
 
     @DebugIt(show_args=True)
     def set_Target(self, target):
-        print("setting target")
+        self.debug_stream("setting target")
         self._target = target
-        self.debug_stream("Set target: %s" % (target))
+        self.debug_stream("Set target: %s" % target)
         if self._select == Action.SYNCHRONIZE:
             # SYNCHRONIZE is used to solve discrepancies between TXM motors
             # interface position values (select/target) and its corresponding
@@ -141,12 +140,12 @@ class TXMAutoPreprocessing(Device):
             pass
         if self._select == Action.PIPELINE:
             if target == Pipeline.MAGNETISM:
-                print("hiho magnetism")
+                self.debug_stream("Beginning of Magnetism pipeline")
                 self._command = "magnetism {0} {1}"
                 self._pipeline = Pipeline.MAGNETISM
                 args = '--db --ff'
             elif target == Pipeline.TOMO:
-                print("Beginning of Tomo pipeline")
+                self.debug_stream("Beginning of Tomo pipeline")
                 # eg: ctbiopartial test.txt --db
                 # eg: ctbiopartial test.txt --id=1
                 # (id of first xrm record for each sample)
@@ -158,7 +157,7 @@ class TXMAutoPreprocessing(Device):
         elif self._select == Action.ID and self._pipeline == Pipeline.TOMO:
             args = '--id {0}'.format(self._target)
 
-        ## Folder collect ##
+        # Folder collect #
         if self._select == Action.FOLDER:
             self._folder_num = self._target
             self._user_folder = (self._root_folder + "/data_" + 
@@ -175,20 +174,19 @@ class TXMAutoPreprocessing(Device):
                 "/beamlines/bl09", "..")
             os.system("ln -s %s %s" % (self.user_folder_relative_path, 
                                        self._all_files_link))
-            print("Folder set to %s" % self._user_folder)
-        #####################
+            self.debug_stream("Folder set to %s" % self._user_folder)
+        ####
 
-        #### END action #####
+        # END action #
         if self._select != Action.END and self._select != Action.FOLDER:
-            print(self._txm_file)
-            print(args)
+            self.debug_stream(self._txm_file)
             command = self._command.format(self._txm_file, args)
-            self.debug_stream("command %s" % (command))
-            print(command)
+            self.debug_stream("command %s" % command)
+            self.debug_stream(command)
             self._thread_pool.add(self.run_command, None, command)
         if self._select == Action.END:
             self.end()
-        #####################
+        ####
 
     def get_Target(self):
         return self._target
@@ -240,8 +238,15 @@ class TXMAutoPreprocessing(Device):
             self._thread_pool.add(self.run_command, None, command,
                                   DevState.STANDBY)
         elif self._pipeline == Pipeline.TOMO:
+            # For Folder select and others
+            # Setting default link, otherwise from Windows, if link is
+            # broken, the link cannot be seen.
+            os.system("rm %s" % self._all_files_link)
+            os.system("ln -s %s %s" % (self.root_folder_relative_path,
+                                       self._all_files_link))
             self.set_state(DevState.STANDBY)
-            print("End of tomo pipeline: setting DS state to standby")
+            self.debug_stream("End of Tomo pipeline: "
+                              "setting DS state to standby")
         else:
             # For Folder select and others
             # Setting default link, otherwise from Windows, if link is
@@ -250,7 +255,7 @@ class TXMAutoPreprocessing(Device):
             os.system("ln -s %s %s" % (self.root_folder_relative_path,
                                        self._all_files_link))
             self.set_state(DevState.STANDBY)
-            print("End: setting DS state to standby")
+            self.debug_stream("End: setting DS state to standby")
             
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
