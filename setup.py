@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 # The version is updated automatically with bumpversion
 # Do not update manually
-__version = '0.1.0'
+__version = '1.0.0-alpha'
 
 long_description = """This is a DS to execute MISTRAL preprocessing Workflows
 """
