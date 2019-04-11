@@ -198,7 +198,7 @@ class TXMAutoPreprocessing(Device):
             return self.get_state() not in [DevState.STANDBY]
 
     @DebugIt(show_args=True)
-    def run_command(self, command, state=DevState.ON):
+    def run_command(self, command):
         #print("begin execute command")
         #print(self._count_command)
         self.debug_stream("run_command %s" % (command))
@@ -209,8 +209,6 @@ class TXMAutoPreprocessing(Device):
         out, err = ssh.communicate()
         if out is not None or len(out) != 0:
             self.debug_stream(out.replace('%', '%%'))
-        #print("state ON")
-        self.set_state(state)
         #print(self._count_command)
         #print("end execute command")
         #self._count_command += 1
@@ -235,8 +233,10 @@ class TXMAutoPreprocessing(Device):
             args = '--stack'
             command = self._command.format(self._txm_file, args)
             self.debug_stream("run_command %s" % (command))
-            self._thread_pool.add(self.run_command, None, command,
-                                  DevState.STANDBY)
+            self._thread_pool.add(self.run_command, None, command)
+            self.set_state(DevState.STANDBY)
+            self.debug_stream("End of Magnetism pipeline: "
+                              "setting DS state to standby")
         elif self._pipeline == Pipeline.TOMO:
             # For Folder select and others
             # Setting default link, otherwise from Windows, if link is
