@@ -98,19 +98,18 @@ class TXMAutoPreprocessing(Device):
             self.user_folder_relative_path = self._root_folder
 
     @DebugIt(show_args=True)
-    def set_TXM_file(self, txmfile, set_link=True):
+    def set_TXM_file(self, txmfile):
         if "/storagebls" in txmfile:
             txmfile = txmfile.replace("/storagebls", "")
         self.debug_stream("Set TXM_file: %s" % txmfile)
         self._root_folder = os.path.dirname(txmfile)
         self._txm_file = txmfile
 
-        if set_link:
-            self.root_folder_relative_path = self._root_folder.replace(
-                "/beamlines/bl09", "..")
-            os.system("rm %s" % self._all_files_link)
-            os.system("ln -s %s %s" % (self.root_folder_relative_path,
-                                       self._all_files_link))
+        self.root_folder_relative_path = self._root_folder.replace(
+            "/beamlines/bl09", "..")
+        os.system("rm %s" % self._all_files_link)
+        os.system("ln -s %s %s" % (self.root_folder_relative_path,
+                                   self._all_files_link))
 
     def get_TXM_file(self):
         return self._txm_file
