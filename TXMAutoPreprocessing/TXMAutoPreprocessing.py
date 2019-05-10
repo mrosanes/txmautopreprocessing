@@ -90,6 +90,7 @@ class TXMAutoPreprocessing(Device):
              "/beamlines/bl09", "..")
             self.user_folder_relative_path = self._user_folder.replace(
              "/beamlines/bl09", "..")
+            os.system("rm %s" % self._all_files_link)
             os.system("ln -s %s %s" % (self.user_folder_relative_path, 
                                        self._all_files_link))
         except Exception:
