@@ -241,26 +241,14 @@ class TXMAutoPreprocessing(Device):
             command = self._command.format(self._txm_file, args)
             self.debug_stream("run_command %s" % (command))
             self._thread_pool.add(self.run_command, None, command)
-        elif self._pipeline == Pipeline.TOMO:
-            # For Folder select and others
-            # Setting default link, otherwise from Windows, if link is
-            # broken, the link cannot be seen.
-            self._root_folder = "/beamlines/bl09/controls/DEFAULT_USER_FOLDER"
-            self.root_folder_relative_path = self._root_folder.replace(
-                "/beamlines/bl09", "..")
-            os.system("rm %s" % self._all_files_link)
-            os.system("ln -s %s %s" % (self.root_folder_relative_path,
-                                       self._all_files_link))
-        else:
-            # For Folder select and others
-            # Setting default link, otherwise from Windows, if link is
-            # broken, the link cannot be seen.
-            self._root_folder = "../controls/DEFAULT_USER_FOLDER"
-            self.root_folder_relative_path = self._root_folder.replace(
-                "/beamlines/bl09", "..")
-            os.system("rm %s" % self._all_files_link)
-            os.system("ln -s %s %s" % (self.root_folder_relative_path,
-                                       self._all_files_link))
+
+        self._root_folder = ("/tmp/beamlines/bl09/controls/"
+                             + "DEFAULT_USER_FOLDER")
+        self.root_folder_relative_path = self._root_folder.replace(
+            "/tmp/beamlines/bl09", "..")
+        os.system("rm %s" % self._all_files_link)
+        os.system("ln -s %s %s" % (self.root_folder_relative_path,
+                                   self._all_files_link))
         self.set_state(DevState.STANDBY)
         self.debug_stream("End of pipeline: setting DS state to standby")
             
