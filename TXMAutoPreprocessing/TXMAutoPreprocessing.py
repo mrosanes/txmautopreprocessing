@@ -240,9 +240,6 @@ class TXMAutoPreprocessing(Device):
             command = self._command.format(self._txm_file, args)
             self.debug_stream("run_command %s" % (command))
             self._thread_pool.add(self.run_command, None, command)
-            self.set_state(DevState.STANDBY)
-            self.debug_stream("End of Magnetism pipeline: "
-                              "setting DS state to standby")
         elif self._pipeline == Pipeline.TOMO:
             # For Folder select and others
             # Setting default link, otherwise from Windows, if link is
@@ -253,9 +250,6 @@ class TXMAutoPreprocessing(Device):
             os.system("rm %s" % self._all_files_link)
             os.system("ln -s %s %s" % (self.root_folder_relative_path,
                                        self._all_files_link))
-            self.set_state(DevState.STANDBY)
-            self.debug_stream("End of Tomo pipeline: "
-                              "setting DS state to standby")
         else:
             # For Folder select and others
             # Setting default link, otherwise from Windows, if link is
@@ -266,8 +260,8 @@ class TXMAutoPreprocessing(Device):
             os.system("rm %s" % self._all_files_link)
             os.system("ln -s %s %s" % (self.root_folder_relative_path,
                                        self._all_files_link))
-            self.set_state(DevState.STANDBY)
-            self.debug_stream("End: setting DS state to standby")
+        self.set_state(DevState.STANDBY)
+        self.debug_stream("End of pipeline: setting DS state to standby")
             
     def is_end_allowed(self):
         return self.get_state() in [DevState.ON]
