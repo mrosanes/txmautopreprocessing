@@ -18,7 +18,8 @@ Action = Enumeration(
         'ENERGY',
         'END',
         'FOLDER',
-        'SYNCHRONIZE'
+        'SYNCHRONIZE',
+        'STACKS'
     ))
 
 Pipeline = Enumeration(
@@ -163,6 +164,10 @@ class TXMAutoPreprocessing(Device):
             args = '--th {0}'.format(self._target)
         elif self._select == Action.ID and self._pipeline == Pipeline.TOMO:
             args = '--id {0}'.format(self._target)
+        elif (self._pipeline == Pipeline.MAGNETISM
+              and self._select == Action.STACKS):
+            # Make stacks for magnetism workflow
+            args = '--stack'
 
         # Folder collect #
         if self._select == Action.FOLDER:
@@ -184,13 +189,14 @@ class TXMAutoPreprocessing(Device):
             self.debug_stream("Folder set to %s" % self._user_folder)
         ####
 
-        # END action #
+        # Execute command
         if self._select != Action.END and self._select != Action.FOLDER:
             self.debug_stream(self._txm_file)
             command = self._command.format(self._txm_file, args)
             self.debug_stream("command %s" % command)
             self.debug_stream(command)
             self._thread_pool.add(self.run_command, None, command)
+        # END action #
         if self._select == Action.END:
             self.end()
         ####
@@ -236,12 +242,6 @@ class TXMAutoPreprocessing(Device):
     @command()
     @DebugIt()
     def end(self):
-        if self._pipeline == Pipeline.MAGNETISM:
-            args = '--stack'
-            command = self._command.format(self._txm_file, args)
-            self.debug_stream("run_command %s" % (command))
-            self._thread_pool.add(self.run_command, None, command)
-
         self._root_folder = ("/tmp/beamlines/bl09/controls/"
                              + "DEFAULT_USER_FOLDER")
         self.root_folder_relative_path = self._root_folder.replace(
@@ -249,6 +249,7 @@ class TXMAutoPreprocessing(Device):
         os.system("rm %s" % self._all_files_link)
         os.system("ln -s %s %s" % (self.root_folder_relative_path,
                                    self._all_files_link))
+        self._pipeline = None
         self.set_state(DevState.STANDBY)
         self.debug_stream("End of pipeline: setting DS state to standby")
             
